@@ -6,6 +6,6 @@ public class AI_vs_Dungeon : ModuleRules
 {
 	public AI_vs_Dungeon(TargetInfo Target)
 	{
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "AIModule" });
 	}
 }

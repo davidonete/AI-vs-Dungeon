@@ -56,7 +56,7 @@ unsigned TrainingData::GetNextInputs(std::vector<double> &inputVals)
 
     std::string label;
     ss >> label;
-    if (label.compare("in:") == 0)
+    if (label.compare("In:") == 0)
     {
         double oneValue;
         while (ss >> oneValue)
@@ -76,7 +76,7 @@ unsigned TrainingData::GetTargetOutputs(std::vector<double> &targetOutputsVals)
 
     std::string label;
     ss >> label;
-    if (label.compare("out:") == 0)
+    if (label.compare("Out:") == 0)
     {
         double oneValue;
         while (ss >> oneValue)
@@ -138,3 +138,70 @@ int main()
 
     return 0;
 }
+
+/*
+unsigned ShouldUp(std::vector<unsigned> inputs)
+{
+    //If there is a obstacle above
+    if (inputs[2] == 1) return 0;
+    //If there is a pit on the floor
+    else if(inputs[0] == 0) return 1;
+    //If there is an obstacle in front
+    else if (inputs[3] == 1) return 1;
+
+    return 0;
+}
+
+unsigned ShouldLeft(std::vector<unsigned> inputs)
+{
+    //if there is an obstacle forward and above, but no obstacle behind
+    if (inputs[3] == 1 && inputs[2] == 1 && inputs[1] == 0) return 1;
+
+    return 0;
+}
+
+unsigned ShouldRight(std::vector<unsigned> inputs)
+{
+    //If there is no obstacle in front
+    if (inputs[3] == 0) return 1;
+    //If there is a obstacle in front, but you can jump it
+    else if (inputs[3] == 1 && inputs[2] == 0) return 1;
+
+    return 0;
+}
+
+int main()
+{
+    unsigned inputNeurons = 4;
+    unsigned hiddenNeurons = 4;
+    unsigned outputNeurons = 3;
+
+    unsigned numberOfSamples = 2000;
+    std::cout << "topology: "<< inputNeurons << " " << hiddenNeurons << " " << outputNeurons << std::endl;
+
+    for (unsigned i = 0; i < numberOfSamples; i++)
+    {
+        //down, back, up, forward
+        std::vector<unsigned> inputs;
+        std::cout << "In: ";
+        //Generate random inputs (0 or 1) 
+        for (unsigned j = 0; j < inputNeurons; j++)
+        {
+            unsigned input = rand() % 2;
+            inputs.push_back(input);
+            std::cout << input << ".0 ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "Out: ";
+        //Generate valid output samples
+        std::cout << ShouldUp(inputs) << ".0 ";
+        std::cout << ShouldLeft(inputs) << ".0 ";
+        std::cout << ShouldRight(inputs) << ".0" << std::endl;
+    }
+    int a;
+    std::cin >> a;
+
+    return 0;
+}
+*/
