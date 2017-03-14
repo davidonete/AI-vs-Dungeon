@@ -24,20 +24,36 @@ class ANNCharacter : public ACharacter
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
 
-protected:
-	// APawn interface
-	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;
-	// End of APawn interface
-
+private:
     /** Called for side to side input */
     void MoveRight(float Val);
 
+    void BeginPlay() override;
     void Tick(float DeltaTime) override;
+
+    //Check if the agent is stuck on the same place for a amount of time
+    void CheckCharacterFitness(float DeltaTime);
+
+    float mBestFitness = 99999.0f;
+    float mLastFitnessTime = 0.0f;
+
+    float mLastMovementValue = 0.0f;
+
+    FVector mGoalLocation;
+    FVector mInitialLocation;
+    FRotator mInitialRotation;
+
+    TArray<TArray<double>> mInputCache;
+
+protected:
+	// APawn interface
+	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;
 
     UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
     UNeuralNetworkComponent* NeuralNetworkComponent;
 
-    float LastMovementValue = 0.0f;
+    UPROPERTY(EditDefaultsOnly, Category = "Behavior")
+    class UBehaviorTree* mBehaviorTree;
 
 public:
     ANNCharacter();
@@ -47,13 +63,18 @@ public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 
+    UFUNCTION(BlueprintCallable, Category = "Death")
+    void Die();
+
+    UFUNCTION(BlueprintCallable, Category = "Goal")
+    void SetGoalLocation(FVector location) { mGoalLocation = location; }
+
+    inline UBehaviorTree* GetBehaviorTree() { return mBehaviorTree; }
+
     void MoveLeftRight(bool moveLeft, bool moveRight);
 
     void NeuralNetworkFeedForward();
     void NeuralNetworkBackPropagate();
     TArray<bool> NeuralNetworkGetOutputValues();
     void SetNeuralNetworkInputValue(NNInputType type, bool collision);
-
-    UPROPERTY(EditDefaultsOnly, Category = "Behavior")
-    class UBehaviorTree* BehaviorTree;
 };

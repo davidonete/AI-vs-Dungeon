@@ -47,11 +47,40 @@ ANNCharacter::ANNCharacter()
     NeuralNetworkComponent = CreateDefaultSubobject<UNeuralNetworkComponent>(TEXT("Neural Network Component"));
 }
 
+void ANNCharacter::BeginPlay()
+{
+    Super::BeginPlay();
+
+    mInitialLocation = GetActorLocation();
+    mInitialRotation = GetActorRotation();
+}
+
 void ANNCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
-    MoveRight(LastMovementValue);
+    MoveRight(mLastMovementValue);
+    CheckCharacterFitness(DeltaTime);
+}
+
+void ANNCharacter::CheckCharacterFitness(float DeltaTime)
+{
+    float fitness = (GetActorLocation() - mGoalLocation).Size();
+    if (fitness < mBestFitness)
+    {
+        mBestFitness = fitness;
+        mLastFitnessTime = 0.0f;
+    }
+    else
+    {
+        mLastFitnessTime += DeltaTime;
+        if (mLastFitnessTime > 10.0f)
+        {
+            mLastFitnessTime = 0.0f;
+            mBestFitness = 99999.0f;
+            Die();
+        }
+    }
 }
 
 void ANNCharacter::SetNeuralNetworkInputValue(NNInputType type, bool collision)
@@ -65,11 +94,39 @@ void ANNCharacter::SetNeuralNetworkInputValue(NNInputType type, bool collision)
     NeuralNetworkComponent->SetInputValue(index, value);
 }
 
+void ANNCharacter::Die()
+{
+    //Train the NN with the samples gathered
+    for (uint16 i = 0; i < mInputCache.Num(); i++)
+    {
+        TArray<double> targetValues;
+        TArray<double> inputValues = mInputCache[i];
+
+        //Feed forward
+        NeuralNetworkComponent->FeedForward(inputValues);
+        //Get target values
+        targetValues = NeuralNetworkComponent->GetTargetValues(inputValues);
+        //Backpropagate
+        NeuralNetworkComponent->BackPropagate(targetValues);
+    }
+
+    //Update Average Error on the GUI
+    UAI_vs_DungeonGameInstance *gameInstance = Cast<UAI_vs_DungeonGameInstance>(GetGameInstance());
+    if (gameInstance)
+        gameInstance->SetAverageError((float)NeuralNetworkComponent->GetRecentAverageError());
+
+    //Reset the cache
+    mInputCache.Empty();
+
+    //Reset agent location and rotation
+    SetActorLocationAndRotation(mInitialLocation, mInitialRotation);
+}
+
 void ANNCharacter::MoveLeftRight(bool moveLeft, bool moveRight)
 {
-    if (moveLeft) LastMovementValue = -1.0f;
-    if (moveRight) LastMovementValue = 1.0f;
-    if (!moveLeft && !moveRight) LastMovementValue = 0.0f;
+    if (moveLeft) mLastMovementValue = -1.0f;
+    if (moveRight) mLastMovementValue = 1.0f;
+    if (!moveLeft && !moveRight) mLastMovementValue = 0.0f;
 }
 
 void ANNCharacter::NeuralNetworkFeedForward()
@@ -80,12 +137,9 @@ void ANNCharacter::NeuralNetworkFeedForward()
 
 void ANNCharacter::NeuralNetworkBackPropagate()
 {
+    //Save the inputs for later training (when character dies)
     TArray<double> inputValues = NeuralNetworkComponent->GetInputValues();
-    TArray<double> targetValues = NeuralNetworkComponent->GetTargetValues(inputValues);
-
-    NeuralNetworkComponent->PrintArray("Target: ", targetValues);
-
-    NeuralNetworkComponent->BackPropagate(targetValues);
+    mInputCache.Add(inputValues);
 }
 
 TArray<bool> ANNCharacter::NeuralNetworkGetOutputValues()
@@ -104,15 +158,8 @@ TArray<bool> ANNCharacter::NeuralNetworkGetOutputValues()
             result.Add(false);
     }
 
-    UAI_vs_DungeonGameInstance *gameInstance = Cast<UAI_vs_DungeonGameInstance>(GetGameInstance());
-    if (gameInstance)
-        gameInstance->SetAverageError((float)NeuralNetworkComponent->GetRecentAverageError());
-
     return result;
 }
-
-//////////////////////////////////////////////////////////////////////////
-// Input
 
 void ANNCharacter::SetupPlayerInputComponent(class UInputComponent* InputComponent)
 {

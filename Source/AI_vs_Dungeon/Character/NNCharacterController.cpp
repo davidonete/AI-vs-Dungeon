@@ -17,10 +17,10 @@ void ANNCharacterController::Possess(APawn *InPawn)
 
     Character = Cast<ANNCharacter>(InPawn);
 
-    if (Character && Character->BehaviorTree)
+    if (Character && Character->GetBehaviorTree())
     {
-        BlackboardComponent->InitializeBlackboard(*Character->BehaviorTree->BlackboardAsset);
-        BehaviorTreeComponent->StartTree(*Character->BehaviorTree);
+        BlackboardComponent->InitializeBlackboard(*Character->GetBehaviorTree()->BlackboardAsset);
+        BehaviorTreeComponent->StartTree(*Character->GetBehaviorTree());
     }
 }
 
