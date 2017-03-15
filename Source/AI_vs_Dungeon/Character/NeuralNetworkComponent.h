@@ -95,6 +95,10 @@ public:
     void PrintArray(FString text, TArray<double> a);
     void PrintInputValues() { PrintArray("In: ", mInputValues); }
 
+    //The learing rate [0...1]
+    UPROPERTY(EditDefaultsOnly, Category = "Network Configuration")
+    float LearningRate = 1.0f;
+
 private:
     //The actual topology of the neural network ([0] num inputs in layer, [1..n] num hidden neurons in layer, [n+1] num outputs in layer)
     UPROPERTY(EditDefaultsOnly, Category = "Network Configuration")

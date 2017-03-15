@@ -17,10 +17,14 @@ class AI_VS_DUNGEON_API UAI_vs_DungeonGameInstance : public UGameInstance
      UAI_vs_DungeonGameInstance();
 
      UFUNCTION(BlueprintCallable, category = "GameInstance")
-     float GetAverageError();
-     void SetAverageError(float result);
+     int32 GetBestFitness() { return mFitness; }
+     inline void SetBestFitness(int32 fitness) { mFitness = fitness; }
+
+     UFUNCTION(BlueprintCallable, category = "GameInstance")
+     int32 GetTrainingSessions() { return mTrainingSessions; }
+     inline void SetTrainingSessions(int32 sessions) { mTrainingSessions = sessions; }
 
   private:
-      float AverageError;
-	
+      int32 mFitness;
+      int32 mTrainingSessions;
 };

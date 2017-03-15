@@ -6,9 +6,9 @@
 double ShouldUp(const TArray<double> &inputs)
 {
     //If there is a obstacle above
-    if (inputs[2] == 1.0) return 0.0;
+    //if (inputs[2] == 1.0) return 0.0;
     //If there is a pit on the floor
-    else if (inputs[0] == 0.0) return 1.0;
+    if (inputs[0] == 0.0) return 1.0;
     //If there is an obstacle in front
     else if (inputs[3] == 1.0) return 1.0;
 
@@ -73,7 +73,7 @@ void UNeuralNetworkComponent::BeginPlay()
         }
 
         //Force the bias node's output value to 1.0
-        mLayers.Last().Last().SetOutputValue(-1.0);
+        mLayers.Last().Last().SetOutputValue(1.0);
     }
 
     //Set default input values

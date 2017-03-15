@@ -65,21 +65,24 @@ void ANNCharacter::Tick(float DeltaTime)
 
 void ANNCharacter::CheckCharacterFitness(float DeltaTime)
 {
-    float fitness = (GetActorLocation() - mGoalLocation).Size();
-    if (fitness < mBestFitness)
+    float distanceLeft = (GetActorLocation() - mGoalLocation).Size();
+    if (distanceLeft < mLastDistanceLeft)
     {
-        mBestFitness = fitness;
-        mLastFitnessTime = 0.0f;
+        mLastDistanceLeft = distanceLeft;
+        mLastDistanceUpdateTime = 0.0f;
+        
+        float totalDistance = (mInitialLocation - mGoalLocation).Size();
+        int32 fitness = (int32)(100.0f - (distanceLeft * 100.0f) / totalDistance);
+        //Update fitness on GUI
+        UAI_vs_DungeonGameInstance *gameInstance = Cast<UAI_vs_DungeonGameInstance>(GetGameInstance());
+        if (gameInstance && fitness > gameInstance->GetBestFitness())
+            gameInstance->SetBestFitness(fitness);
     }
     else
     {
-        mLastFitnessTime += DeltaTime;
-        if (mLastFitnessTime > 10.0f)
-        {
-            mLastFitnessTime = 0.0f;
-            mBestFitness = 99999.0f;
+        mLastDistanceUpdateTime += DeltaTime;
+        if (mLastDistanceUpdateTime > 5.0f)
             Die();
-        }
     }
 }
 
@@ -97,41 +100,69 @@ void ANNCharacter::SetNeuralNetworkInputValue(NNInputType type, bool collision)
 void ANNCharacter::Die()
 {
     //Train the NN with the samples gathered
-    for (uint16 i = 0; i < mInputCache.Num(); i++)
+    if (mInputCache.Num() > 0)
     {
-        TArray<double> targetValues;
-        TArray<double> inputValues = mInputCache[i];
+        int32 loop = mInputCache.Num();
+        int32 offset = 0;
+        if (NeuralNetworkComponent->LearningRate < 1.0)
+        {
+            FMath::Lerp(0, mInputCache.Num(), NeuralNetworkComponent->LearningRate);
+            offset = rand() % (mInputCache.Num() - loop);
+        }
+        for (uint16 i = offset; i < loop + offset; i++)
+        {
+            TArray<double> targetValues;
+            TArray<double> inputValues = mInputCache[i];
 
-        //Feed forward
-        NeuralNetworkComponent->FeedForward(inputValues);
-        //Get target values
-        targetValues = NeuralNetworkComponent->GetTargetValues(inputValues);
-        //Backpropagate
-        NeuralNetworkComponent->BackPropagate(targetValues);
+            //Feed forward
+            NeuralNetworkComponent->FeedForward(inputValues);
+            //Get target values
+            targetValues = NeuralNetworkComponent->GetTargetValues(inputValues);
+            //Backpropagate
+            NeuralNetworkComponent->BackPropagate(targetValues);
+        }
+        UE_LOG(LogTemp, Warning, TEXT("Average error: %f Sessions: %d Max: %d"), (float)NeuralNetworkComponent->GetRecentAverageError(), loop, mInputCache.Num());
     }
 
-    //Update Average Error on the GUI
-    UAI_vs_DungeonGameInstance *gameInstance = Cast<UAI_vs_DungeonGameInstance>(GetGameInstance());
-    if (gameInstance)
-        gameInstance->SetAverageError((float)NeuralNetworkComponent->GetRecentAverageError());
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.Instigator = this;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+    ACharacter* body = GetWorld()->SpawnActor<ACharacter>(mCharacterBody, GetActorLocation(), GetActorRotation(), SpawnParams);
+    if (body)
+    {
+        if (GetCharacterMovement()->Velocity.Size() > 20.0f)
+        {
+            FVector direction = GetCharacterMovement()->Velocity;
+            direction.Normalize();
+            body->GetMesh()->AddImpulseAtLocation(direction * 10000.0f, GetActorLocation());
+        }
+    }
 
     //Reset the cache
     mInputCache.Empty();
 
+    mLastDistanceUpdateTime = 0.0f;
+    mLastDistanceLeft = 9999999.0f;
+
     //Reset agent location and rotation
     SetActorLocationAndRotation(mInitialLocation, mInitialRotation);
+
+    //Update training sessions on GUI
+    UAI_vs_DungeonGameInstance *gameInstance = Cast<UAI_vs_DungeonGameInstance>(GetGameInstance());
+    if (gameInstance)
+        gameInstance->SetTrainingSessions(gameInstance->GetTrainingSessions() + 1);
 }
 
 void ANNCharacter::MoveLeftRight(bool moveLeft, bool moveRight)
 {
-    if (moveLeft) mLastMovementValue = -1.0f;
     if (moveRight) mLastMovementValue = 1.0f;
+    if (moveLeft) mLastMovementValue = -1.0f;
     if (!moveLeft && !moveRight) mLastMovementValue = 0.0f;
 }
 
 void ANNCharacter::NeuralNetworkFeedForward()
 {
-    NeuralNetworkComponent->PrintInputValues();
+    //NeuralNetworkComponent->PrintInputValues();
     NeuralNetworkComponent->FeedForward();
 }
 
@@ -147,7 +178,7 @@ TArray<bool> ANNCharacter::NeuralNetworkGetOutputValues()
     TArray<double> outputValues;
     NeuralNetworkComponent->GetResults(outputValues);
 
-    NeuralNetworkComponent->PrintArray("Out: ", outputValues);
+    //NeuralNetworkComponent->PrintArray("Out: ", outputValues);
 
     TArray<bool> result;
     for (uint16 i = 0; i < outputValues.Num(); i++)

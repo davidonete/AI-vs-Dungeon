@@ -34,8 +34,8 @@ private:
     //Check if the agent is stuck on the same place for a amount of time
     void CheckCharacterFitness(float DeltaTime);
 
-    float mBestFitness = 99999.0f;
-    float mLastFitnessTime = 0.0f;
+    float mLastDistanceLeft = 9999999.0f;
+    float mLastDistanceUpdateTime = 0.0f;
 
     float mLastMovementValue = 0.0f;
 
@@ -54,6 +54,9 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, Category = "Behavior")
     class UBehaviorTree* mBehaviorTree;
+
+    UPROPERTY(EditDefaultsOnly, Category = "Behavior")
+    TSubclassOf<class ACharacter> mCharacterBody;
 
 public:
     ANNCharacter();
