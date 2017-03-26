@@ -62,3 +62,5 @@ Intermediate/*
 DerivedDataCache/*
 BasicNN/project/x64/
 *.db
+GANN/bin/
+GANN/project/x64/
