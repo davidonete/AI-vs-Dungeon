@@ -37,7 +37,7 @@ void ANNCharacterController::AgentMoveLeftRight(bool moveLeft, bool moveRight)
 
 void ANNCharacterController::SetNeuralNetworkInputValue(NNInputType type, bool collision)
 {
-    Character->SetNeuralNetworkInputValue(type, collision);
+    Character->NeuralNetworkSetInputValue(type, collision);
 }
 
 void ANNCharacterController::NeuralNetworkFeedForward()

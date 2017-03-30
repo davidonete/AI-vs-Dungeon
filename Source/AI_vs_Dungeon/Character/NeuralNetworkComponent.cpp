@@ -3,36 +3,6 @@
 #include "Runtime/Engine/Public/Engine.h"
 #include "NeuralNetworkComponent.h"
 
-double ShouldUp(const TArray<double> &inputs)
-{
-    //If there is a obstacle above
-    //if (inputs[2] == 1.0) return 0.0;
-    //If there is a pit on the floor
-    if (inputs[0] == 0.0) return 1.0;
-    //If there is an obstacle in front
-    else if (inputs[3] == 1.0) return 1.0;
-
-    return 0.0;
-}
-
-double ShouldLeft(const TArray<double> &inputs)
-{
-    //if there is an obstacle forward and above, but no obstacle behind
-    if (inputs[3] == 1.0 && inputs[2] == 1.0 && inputs[1] == 0.0) return 1.0;
-
-    return 0.0;
-}
-
-double ShouldRight(const TArray<double> &inputs)
-{
-    //If there is no obstacle in front
-    if (inputs[3] == 0.0) return 1.0;
-    //If there is a obstacle in front, but you can jump it
-    else if (inputs[3] == 1.0 && inputs[2] == 0.0) return 1.0;
-
-    return 0.0;
-}
-
 // Sets default values for this component's properties
 UNeuralNetworkComponent::UNeuralNetworkComponent()
 {
@@ -40,6 +10,9 @@ UNeuralNetworkComponent::UNeuralNetworkComponent()
 	// off to improve performance if you don't need them.
 	bWantsBeginPlay = true;
 	PrimaryComponentTick.bCanEverTick = true;
+
+    mRecentAverageError = 1.0;
+    mRecentAverageSmoothingFactor = 1.0;
 }
 
 // Called when the game starts
@@ -47,38 +20,43 @@ void UNeuralNetworkComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-    mRecentAverageError = 1.0;
-    mRecentAverageSmoothingFactor = 1.0;
+    InitializeNetwork();
+}
 
-    //Create layers
-    uint16 numLayers = NetworkTopology.Num();
-    for (uint16 layerIdx = 0; layerIdx < numLayers; layerIdx++)
+void UNeuralNetworkComponent::InitializeNetwork()
+{
+    if (mLayers.Num() <= 0)
     {
-        mLayers.Add(Layer());
-
-        //if the layer is the last one there are no outputs
-        //if not the number of outputs is the number of neurons of the next layer.
-        int32 numOutputs;
-        if (layerIdx == numLayers - 1)
-            numOutputs = 0;
-        else
-            numOutputs = NetworkTopology[layerIdx + 1];
-
-        //Fill the layer with neurons (<= we are addin an extra neuron with a constant value (Bias))
-        uint16 numNeurons = NetworkTopology[layerIdx];
-        for (uint16 neuronIdx = 0; neuronIdx <= numNeurons; neuronIdx++)
+        //Create layers
+        uint16 numLayers = NetworkTopology.Num();
+        for (uint16 layerIdx = 0; layerIdx < numLayers; layerIdx++)
         {
-            //Add the new neurons to the layer created before
-            mLayers.Last().Add(Neuron(numOutputs, neuronIdx));
+            mLayers.Add(Layer());
+
+            //if the layer is the last one there are no outputs
+            //if not the number of outputs is the number of neurons of the next layer.
+            int32 numOutputs;
+            if (layerIdx == numLayers - 1)
+                numOutputs = 0;
+            else
+                numOutputs = NetworkTopology[layerIdx + 1];
+
+            //Fill the layer with neurons (<= we are addin an extra neuron with a constant value (Bias))
+            uint16 numNeurons = NetworkTopology[layerIdx];
+            for (uint16 neuronIdx = 0; neuronIdx <= numNeurons; neuronIdx++)
+            {
+                //Add the new neurons to the layer created before
+                mLayers.Last().Add(Neuron(numOutputs, neuronIdx));
+            }
+
+            //Force the bias node's output value to 1.0
+            mLayers.Last().Last().SetOutputValue(1.0);
         }
 
-        //Force the bias node's output value to 1.0
-        mLayers.Last().Last().SetOutputValue(1.0);
+        //Set default input values
+        for (uint16 i = 0; i < NetworkTopology[0]; i++)
+            mInputValues.Add(0.0);
     }
-
-    //Set default input values
-    for (uint16 i = 0; i < NetworkTopology[0]; i++)
-        mInputValues.Add(0.0);
 }
 
 // Called every frame
@@ -161,6 +139,46 @@ void UNeuralNetworkComponent::GetResults(TArray<double> &resultValues) const
         resultValues.Add(mLayers.Last()[neuronIdx].GetOutputValue());
 }
 
+void UNeuralNetworkComponent::SetConnectionWeights(const TArray<double> &w)
+{
+    unsigned connectionIdx = 0;
+    //From the fist layer to the last hidden layer (except output layer)
+    for (int32 layerIdx = 0; layerIdx < mLayers.Num() - 1; layerIdx++)
+    {
+        Layer &layer = mLayers[layerIdx];
+        //From the first neuron of the layer to the last
+        for (int32 neuronIdx = 0; neuronIdx < layer.Num(); neuronIdx++)
+        {
+            TArray<Connection> newConnections;
+            int32 numConnections = (int32)layer[neuronIdx].GetOutputWeights().Num();
+            for (int32 weigthIdx = 0; weigthIdx < numConnections; weigthIdx++)
+            {
+                newConnections.Add(Connection(w[connectionIdx]));
+                connectionIdx++;
+            }
+            layer[neuronIdx].SetOutputWeights(newConnections);
+        }
+    }
+}
+
+void UNeuralNetworkComponent::GetConnectionWeights(TArray<double> &w)
+{
+    w.Empty();
+
+    //From the fist layer to the last hidden layer (except output layer)
+    for (int32 layerIdx = 0; layerIdx < mLayers.Num() - 1; layerIdx++)
+    {
+        Layer &layer = mLayers[layerIdx];
+        //From the first neuron of the layer to the last
+        for (int32 neuronIdx = 0; neuronIdx < layer.Num(); neuronIdx++)
+        {
+            TArray<Connection> weights = layer[neuronIdx].GetOutputWeights();
+            for (int32 weigthIdx = 0; weigthIdx < weights.Num(); weigthIdx++)
+                w.Add(weights[weigthIdx].Weight);
+        }
+    }
+}
+
 void UNeuralNetworkComponent::SetInputValue(uint16 index, double value)
 {
     if (index < mInputValues.Num())
@@ -170,9 +188,9 @@ void UNeuralNetworkComponent::SetInputValue(uint16 index, double value)
 TArray<double> UNeuralNetworkComponent::GetTargetValues(const TArray<double> &inputValues) const
 {
     TArray<double> targetValues;
-    targetValues.Add(ShouldUp(inputValues));
-    targetValues.Add(ShouldLeft(inputValues));
-    targetValues.Add(ShouldRight(inputValues));
+    //targetValues.Add(ShouldUp(inputValues));
+    //targetValues.Add(ShouldLeft(inputValues));
+    //targetValues.Add(ShouldRight(inputValues));
 
     return targetValues;
 }

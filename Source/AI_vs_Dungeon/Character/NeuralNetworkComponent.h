@@ -41,6 +41,8 @@ public:
 
     inline void SetOutputValue(const double value) { mOutputVal = value; }
     inline double GetOutputValue() const { return mOutputVal; }
+    inline TArray<Connection> GetOutputWeights() { return mOutputWeights; }
+    inline void SetOutputWeights(TArray<Connection> weights) { mOutputWeights = weights; }
 
     void CalculateOutputGradients(const double targetValue);
     void CalculateHiddenGradients(const Layer &nextLayer);
@@ -75,6 +77,8 @@ public:
 
 	// Called when the game starts
 	virtual void BeginPlay() override;
+
+    void InitializeNetwork();
 	
 	// Called every frame
 	virtual void TickComponent( float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction ) override;
@@ -86,6 +90,9 @@ public:
 
     inline double GetRecentAverageError() const { return mRecentAverageError; }
 
+    void SetConnectionWeights(const TArray<double> &w);
+    void GetConnectionWeights(TArray<double> &w);
+
     //down, back, up, forward
     void SetInputValue(uint16 index, double value);
     inline TArray<double> GetInputValues() { return mInputValues; };
@@ -94,10 +101,6 @@ public:
 
     void PrintArray(FString text, TArray<double> a);
     void PrintInputValues() { PrintArray("In: ", mInputValues); }
-
-    //The learing rate [0...1]
-    UPROPERTY(EditDefaultsOnly, Category = "Network Configuration")
-    float LearningRate = 1.0f;
 
 private:
     //The actual topology of the neural network ([0] num inputs in layer, [1..n] num hidden neurons in layer, [n+1] num outputs in layer)

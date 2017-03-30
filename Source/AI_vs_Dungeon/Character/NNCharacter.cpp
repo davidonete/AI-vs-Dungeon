@@ -1,6 +1,7 @@
 
 #include "AI_vs_Dungeon.h"
 #include "Runtime/Engine/Public/Engine.h"
+#include "Game/GeneticAlgorithmController.h"
 #include "Game/AI_vs_DungeonGameInstance.h"
 #include "NNCharacter.h"
 
@@ -73,10 +74,12 @@ void ANNCharacter::CheckCharacterFitness(float DeltaTime)
         
         float totalDistance = (mInitialLocation - mGoalLocation).Size();
         int32 fitness = (int32)(100.0f - (distanceLeft * 100.0f) / totalDistance);
+        /*
         //Update fitness on GUI
         UAI_vs_DungeonGameInstance *gameInstance = Cast<UAI_vs_DungeonGameInstance>(GetGameInstance());
         if (gameInstance && fitness > gameInstance->GetBestFitness())
             gameInstance->SetBestFitness(fitness);
+        */
     }
     else
     {
@@ -86,7 +89,7 @@ void ANNCharacter::CheckCharacterFitness(float DeltaTime)
     }
 }
 
-void ANNCharacter::SetNeuralNetworkInputValue(NNInputType type, bool collision)
+void ANNCharacter::NeuralNetworkSetInputValue(NNInputType type, bool collision)
 {
     uint16 index = (uint16)type;
     double value;
@@ -97,8 +100,15 @@ void ANNCharacter::SetNeuralNetworkInputValue(NNInputType type, bool collision)
     NeuralNetworkComponent->SetInputValue(index, value);
 }
 
+void ANNCharacter::SetGeneticAlgorithmController(int32 id, AGeneticAlgorithmController *GAController)
+{
+    mGenomeID = id;
+    mGAController = GAController;
+}
+
 void ANNCharacter::Die()
 {
+    /*
     //Train the NN with the samples gathered
     if (mInputCache.Num() > 0)
     {
@@ -123,7 +133,16 @@ void ANNCharacter::Die()
         }
         UE_LOG(LogTemp, Warning, TEXT("Average error: %f Sessions: %d Max: %d"), (float)NeuralNetworkComponent->GetRecentAverageError(), loop, mInputCache.Num());
     }
+    */
 
+    //Update the fitness score of this entity (for the genetic algorithm)
+    float distanceLeft = (GetActorLocation() - mGoalLocation).Size();
+    float totalDistance = (mInitialLocation - mGoalLocation).Size();
+    double fitness = (double)(100.0f - (distanceLeft * 100.0f) / totalDistance);
+    mGAController->UpdateEntityFitness(mGenomeID, fitness);
+    mGAController->SpawnEntity();
+
+    //Spawn dead body
     FActorSpawnParameters SpawnParams;
     SpawnParams.Instigator = this;
     SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -138,6 +157,8 @@ void ANNCharacter::Die()
         }
     }
 
+    Destroy();
+    /* TO DO: Delete the entity
     //Reset the cache
     mInputCache.Empty();
 
@@ -151,13 +172,19 @@ void ANNCharacter::Die()
     UAI_vs_DungeonGameInstance *gameInstance = Cast<UAI_vs_DungeonGameInstance>(GetGameInstance());
     if (gameInstance)
         gameInstance->SetTrainingSessions(gameInstance->GetTrainingSessions() + 1);
+    */
 }
 
 void ANNCharacter::MoveLeftRight(bool moveLeft, bool moveRight)
 {
-    if (moveRight) mLastMovementValue = 1.0f;
     if (moveLeft) mLastMovementValue = -1.0f;
+    if (moveRight) mLastMovementValue = 1.0f;
     if (!moveLeft && !moveRight) mLastMovementValue = 0.0f;
+}
+
+void ANNCharacter::NeuralNetworkInitialize()
+{
+    NeuralNetworkComponent->InitializeNetwork();
 }
 
 void ANNCharacter::NeuralNetworkFeedForward()
@@ -178,7 +205,7 @@ TArray<bool> ANNCharacter::NeuralNetworkGetOutputValues()
     TArray<double> outputValues;
     NeuralNetworkComponent->GetResults(outputValues);
 
-    //NeuralNetworkComponent->PrintArray("Out: ", outputValues);
+    NeuralNetworkComponent->PrintArray("Out: ", outputValues);
 
     TArray<bool> result;
     for (uint16 i = 0; i < outputValues.Num(); i++)
@@ -190,6 +217,16 @@ TArray<bool> ANNCharacter::NeuralNetworkGetOutputValues()
     }
 
     return result;
+}
+
+void ANNCharacter::NeuralNetworkGetConnectionWeights(TArray<double> &w)
+{
+    NeuralNetworkComponent->GetConnectionWeights(w);
+}
+
+void ANNCharacter::NeuralNetworkSetConnectionWeights(TArray<double> &w)
+{
+    NeuralNetworkComponent->SetConnectionWeights(w);
 }
 
 void ANNCharacter::SetupPlayerInputComponent(class UInputComponent* InputComponent)

@@ -11,6 +11,8 @@
 #include "NeuralNetworkComponent.h"
 #include "NNCharacter.generated.h"
 
+class AGeneticAlgorithmController;
+
 UCLASS()
 class ANNCharacter : public ACharacter
 {
@@ -45,6 +47,9 @@ private:
 
     TArray<TArray<double>> mInputCache;
 
+    int32 mGenomeID;
+    AGeneticAlgorithmController* mGAController;
+
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;
@@ -76,8 +81,13 @@ public:
 
     void MoveLeftRight(bool moveLeft, bool moveRight);
 
+    void NeuralNetworkInitialize();
     void NeuralNetworkFeedForward();
     void NeuralNetworkBackPropagate();
     TArray<bool> NeuralNetworkGetOutputValues();
-    void SetNeuralNetworkInputValue(NNInputType type, bool collision);
+    void NeuralNetworkSetInputValue(NNInputType type, bool collision);
+    void NeuralNetworkGetConnectionWeights(TArray<double> &w);
+    void NeuralNetworkSetConnectionWeights(TArray<double> &w);
+
+    void SetGeneticAlgorithmController(int32 id, AGeneticAlgorithmController* GAController);
 };

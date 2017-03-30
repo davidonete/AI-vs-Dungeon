@@ -64,3 +64,5 @@ BasicNN/project/x64/
 *.db
 GANN/bin/
 GANN/project/x64/
+Base/GANN/project/x64/
+Base/NN/project/x64/
