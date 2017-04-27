@@ -1,4 +1,5 @@
 #include "AI_vs_Dungeon.h"
+#include "Game/AI_vs_DungeonGameInstance.h"
 #include "GeneticAlgorithmController.h"
 
 // Sets default values
@@ -10,12 +11,14 @@ AGeneticAlgorithmController::AGeneticAlgorithmController()
     mGAComponent = CreateDefaultSubobject<UGeneticAlgorithmComponent>(TEXT("Genetic Algorithm Component"));
 
     mGenomeIndex = 0;
+    mFoundSolution = false;
 }
 
 // Called when the game starts or when spawned
 void AGeneticAlgorithmController::BeginPlay()
 {
 	Super::BeginPlay();
+    mGAComponent->Initialize();
 }
 
 // Called every frame
@@ -32,6 +35,8 @@ void AGeneticAlgorithmController::SpawnEntity()
     
     if (entity)
     {
+        UAI_vs_DungeonGameInstance *gameInstance = Cast<UAI_vs_DungeonGameInstance>(GetWorld()->GetGameInstance());
+
         int32 GenomeID;
         entity->NeuralNetworkInitialize();
 
@@ -47,7 +52,12 @@ void AGeneticAlgorithmController::SpawnEntity()
             if (mGenomeIndex > mGAComponent->GetPopulationSize() - 1)
             {
                 mGenomeIndex = 0;
-                mGAComponent->Epoch();
+                if(!mFoundSolution)
+                    mGAComponent->Epoch();
+
+                //Reset member counter on GUI
+                if (gameInstance)
+                    gameInstance->SetPopulationMember(0);
             }
 
             //Create a new entity with the a genome of the new generation
@@ -60,6 +70,11 @@ void AGeneticAlgorithmController::SpawnEntity()
             mGenomeIndex++;
         }
         entity->SetGeneticAlgorithmController(GenomeID, this);
+        OnCharacterDeath.Broadcast(entity);
+
+        //Increase member counter on GUI
+        if (gameInstance)
+            gameInstance->SetPopulationMember(gameInstance->GetPopulationMember() + 1);
     }
 }
 
@@ -67,4 +82,10 @@ void AGeneticAlgorithmController::UpdateEntityFitness(int32 id, double fitness)
 {
     UE_LOG(LogTemp, Warning, TEXT("Entity Fitness: %f"), (float)fitness);
     mGAComponent->UpdateGenomeFitness(id, fitness);
+}
+
+void AGeneticAlgorithmController::SetBestGenome()
+{
+    mFoundSolution = true;
+    mGAComponent->SetBestGenomes(mGenomeIndex - 1);
 }

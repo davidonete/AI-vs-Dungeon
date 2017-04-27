@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "AI_vs_Dungeon.h"
+#include "Game/AI_vs_DungeonGameInstance.h"
 #include "GeneticAlgorithmComponent.h"
 
 float RandFloat()
@@ -26,7 +27,8 @@ void UGeneticAlgorithmComponent::Epoch()
     TArray<SGenome> childGenomes;
 
     //Elitism selection (select the best genomes for the next generation)
-    ElitismSelection(mElitismSelection, childGenomes);
+    int32 elitismQuantity = (int32)(mPopulation * mElitismSelection);
+    ElitismSelection(elitismQuantity, childGenomes);
 
     while (childGenomes.Num() < mPopulation)
     {
@@ -54,6 +56,26 @@ void UGeneticAlgorithmComponent::Epoch()
     //Increment the generation counter
     mGeneration++;
     UE_LOG(LogTemp, Warning, TEXT("New Generation: %d"), mGeneration);
+
+    UAI_vs_DungeonGameInstance *gameInstance = Cast<UAI_vs_DungeonGameInstance>(GetWorld()->GetGameInstance());
+    if (gameInstance)
+        gameInstance->SetGenerations(mGeneration);
+}
+
+void UGeneticAlgorithmComponent::SetBestGenomes(int32 genomeIdx)
+{
+    int32 newChilds = 0;
+    TArray<SGenome> childGenomes;
+    
+    SGenome bestGenome = mGenomes[genomeIdx];
+    while (childGenomes.Num() < mPopulation)
+    {
+        childGenomes.Add(bestGenome);
+        newChilds++;
+    }
+
+    //Change the old population with the new one
+    mGenomes = childGenomes;
 }
 
 void UGeneticAlgorithmComponent::Mutate(TArray<double> &chromosome)
@@ -76,7 +98,7 @@ void UGeneticAlgorithmComponent::Crossover(const TArray<double> &mom, const TArr
     child1.Empty();
     child2.Empty();
 
-    if ((RandFloat() > mCrossoverRate) || (mom == dad))
+    if ((RandFloat() > mCrossoverRate) || (mom == dad) || mCrossoverRate <= 0.0f)
     {
         child1 = mom;
         child2 = dad;
@@ -179,9 +201,30 @@ void UGeneticAlgorithmComponent::UpdateWeights(SGenome &genome)
 }
 */
 
+void UGeneticAlgorithmComponent::Initialize()
+{
+    UAI_vs_DungeonGameInstance *gameInstance = Cast<UAI_vs_DungeonGameInstance>(GetWorld()->GetGameInstance());
+    if (gameInstance && gameInstance->GetInitialConfigValues())
+    {
+        mPopulation = gameInstance->GetPopulationSize();
+        mCrossoverRate = (float)gameInstance->GetCrossoverRate() * 0.01f;
+        mMutationRate = (float)gameInstance->GetMutationRate() * 0.01f;
+        mMaxPerturbation = (float)gameInstance->GetMaxPerturbation() * 0.01f;
+        mElitismSelection = (float)gameInstance->GetElitismRate() * 0.01f;
+    }
+}
+
 void UGeneticAlgorithmComponent::UpdateGenomeFitness(int32 id, float fitness)
 {
     mGenomes[id].Fitness = fitness;
+
+    if (fitness > mBestFitnessScore)
+    {
+        //Update fitness on GUI
+        UAI_vs_DungeonGameInstance *gameInstance = Cast<UAI_vs_DungeonGameInstance>(GetWorld()->GetGameInstance());
+        if (gameInstance && gameInstance->GetBestFitness() < fitness)
+            gameInstance->SetBestFitness(fitness);
+    }
 }
 
 int32 UGeneticAlgorithmComponent::NewGenome(ANNCharacter *character)

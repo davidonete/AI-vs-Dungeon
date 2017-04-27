@@ -12,6 +12,8 @@
 #include "GeneticAlgorithmComponent.h"
 #include "GeneticAlgorithmController.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCharacterDeathDelegate, AActor*, newCharacter);
+
 UCLASS()
 class AI_VS_DUNGEON_API AGeneticAlgorithmController : public AActor
 {
@@ -33,6 +35,13 @@ public:
 
     void UpdateEntityFitness(int32 id, double fitness);
 
+	UPROPERTY(BlueprintAssignable, Category = "Character death")
+    FCharacterDeathDelegate OnCharacterDeath;
+
+    //Called when the genetic algorithm has solved the problem
+    UFUNCTION(BlueprintCallable, Category = "Controller")
+    void SetBestGenome();
+
 private:
     UPROPERTY(EditDefaultsOnly, Category = "GA")
     UGeneticAlgorithmComponent* mGAComponent;
@@ -42,4 +51,6 @@ private:
 
     int32 mInitialPopulation;
     int32 mGenomeIndex;
+
+    bool mFoundSolution;
 };

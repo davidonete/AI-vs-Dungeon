@@ -18,8 +18,6 @@ UENUM(BlueprintType)
 enum NNInputType
 {
     GroundCollision = 0,
-    BackwardCollision,
-    UpCollision,
     ForwardCollision
 };
 

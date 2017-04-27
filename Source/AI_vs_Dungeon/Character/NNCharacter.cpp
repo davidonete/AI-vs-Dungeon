@@ -1,8 +1,6 @@
 
 #include "AI_vs_Dungeon.h"
-#include "Runtime/Engine/Public/Engine.h"
 #include "Game/GeneticAlgorithmController.h"
-#include "Game/AI_vs_DungeonGameInstance.h"
 #include "NNCharacter.h"
 
 ANNCharacter::ANNCharacter()
@@ -18,6 +16,7 @@ ANNCharacter::ANNCharacter()
 	bUseControllerRotationYaw = false;
 	bUseControllerRotationRoll = false;
 
+    /*
 	// Create a camera boom attached to the root (capsule)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
@@ -31,6 +30,7 @@ ANNCharacter::ANNCharacter()
 	SideViewCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("SideViewCamera"));
 	SideViewCameraComponent->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	SideViewCameraComponent->bUsePawnControlRotation = false; // We don't want the controller rotating the camera
+    */
 
 	// Configure character movement
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Face in the direction we are moving..
@@ -74,12 +74,6 @@ void ANNCharacter::CheckCharacterFitness(float DeltaTime)
         
         float totalDistance = (mInitialLocation - mGoalLocation).Size();
         int32 fitness = (int32)(100.0f - (distanceLeft * 100.0f) / totalDistance);
-        /*
-        //Update fitness on GUI
-        UAI_vs_DungeonGameInstance *gameInstance = Cast<UAI_vs_DungeonGameInstance>(GetGameInstance());
-        if (gameInstance && fitness > gameInstance->GetBestFitness())
-            gameInstance->SetBestFitness(fitness);
-        */
     }
     else
     {
@@ -156,8 +150,8 @@ void ANNCharacter::Die()
             body->GetMesh()->AddImpulseAtLocation(direction * 10000.0f, GetActorLocation());
         }
     }
-
     Destroy();
+
     /* TO DO: Delete the entity
     //Reset the cache
     mInputCache.Empty();

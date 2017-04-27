@@ -29,10 +29,13 @@ class AI_VS_DUNGEON_API UGeneticAlgorithmComponent : public UActorComponent
 public:
     UGeneticAlgorithmComponent();
 
+    void Initialize();
+
     void UpdateGenomeFitness(int32 id, float fitness);
     int32 NewGenome(ANNCharacter *character);
     
     void Epoch();
+    void SetBestGenomes(int32 genomeIdx);
 
     inline int32 GetMaxPopulationSize() { return mPopulation; }
     inline int32 GetPopulationSize() { return mGenomes.Num(); }
@@ -49,24 +52,24 @@ private:
     TArray<SGenome> mGenomes;
 
     //Size of the population
-    UPROPERTY(EditDefaultsOnly, Category = "Configuration")
-    int32 mPopulation = 50;
+    UPROPERTY(EditAnywhere, Category = "Configuration")
+    int32 mPopulation = 10;
 
     //The rate that the chosen chromosomes can swap their bits (to generate a child)
-    UPROPERTY(EditDefaultsOnly, Category = "Configuration")
-    float mCrossoverRate = 0.5;
+    UPROPERTY(EditAnywhere, Category = "Configuration")
+    float mCrossoverRate = 0.5f;
 
     //The chance that a child chromosome can be mutated (his bits are modified)
-    UPROPERTY(EditDefaultsOnly, Category = "Configuration")
-    float mMutationRate = 0.7;
+    UPROPERTY(EditAnywhere, Category = "Configuration")
+    float mMutationRate = 0.7f;
 
     //The amount to be modified when mutated
-    UPROPERTY(EditDefaultsOnly, Category = "Configuration")
-    float mMaxPerturbation = 0.5;
+    UPROPERTY(EditAnywhere, Category = "Configuration")
+    float mMaxPerturbation = 0.5f;
 
     //How many genomes are selected from elitism
-    UPROPERTY(EditDefaultsOnly, Category = "Configuration")
-    int32 mElitismSelection = 2;
+    UPROPERTY(EditAnywhere, Category = "Configuration")
+    float mElitismSelection = 0.25f;
 
     //How many bits per chromosome
     int32 mChromosomeLenght;

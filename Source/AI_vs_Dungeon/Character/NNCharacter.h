@@ -18,13 +18,15 @@ class ANNCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
-	/** Side view camera */
+    /*
+	// Side view camera
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* SideViewCameraComponent;
 
-	/** Camera boom positioning the camera beside the character */
+	// Camera boom positioning the camera beside the character
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
+    */
 
 private:
     /** Called for side to side input */
@@ -67,9 +69,9 @@ public:
     ANNCharacter();
 
 	/** Returns SideViewCameraComponent subobject **/
-	FORCEINLINE class UCameraComponent* GetSideViewCameraComponent() const { return SideViewCameraComponent; }
+	//FORCEINLINE class UCameraComponent* GetSideViewCameraComponent() const { return SideViewCameraComponent; }
 	/** Returns CameraBoom subobject **/
-	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
+	//FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 
     UFUNCTION(BlueprintCallable, Category = "Death")
     void Die();
