@@ -1,6 +1,7 @@
 
 #include "AI_vs_Dungeon.h"
 #include "Game/GeneticAlgorithmController.h"
+#include "Game/AI_vs_DungeonGameInstance.h"
 #include "NNCharacter.h"
 
 ANNCharacter::ANNCharacter()
@@ -94,10 +95,11 @@ void ANNCharacter::NeuralNetworkSetInputValue(NNInputType type, bool collision)
     NeuralNetworkComponent->SetInputValue(index, value);
 }
 
-void ANNCharacter::SetGeneticAlgorithmController(int32 id, AGeneticAlgorithmController *GAController)
+void ANNCharacter::SetGeneticAlgorithmController(int32 id, AGeneticAlgorithmController *GAController, bool CameraFocus)
 {
     mGenomeID = id;
     mGAController = GAController;
+    mHasCameraFocus = CameraFocus;
 }
 
 void ANNCharacter::Die()
@@ -134,7 +136,7 @@ void ANNCharacter::Die()
     float totalDistance = (mInitialLocation - mGoalLocation).Size();
     double fitness = (double)(100.0f - (distanceLeft * 100.0f) / totalDistance);
     mGAController->UpdateEntityFitness(mGenomeID, fitness);
-    mGAController->SpawnEntity();
+    mGAController->SpawnEntity(mHasCameraFocus);
 
     //Spawn dead body
     FActorSpawnParameters SpawnParams;
@@ -209,8 +211,31 @@ TArray<bool> ANNCharacter::NeuralNetworkGetOutputValues()
         else
             result.Add(false);
     }
+    
+    if (mHasCameraFocus)
+        UpdateGUI();
 
     return result;
+}
+
+void ANNCharacter::UpdateGUI()
+{
+    UAI_vs_DungeonGameInstance *gameInstance = Cast<UAI_vs_DungeonGameInstance>(GetWorld()->GetGameInstance());
+    if (gameInstance)
+    {
+        TArray<double> outputValues;
+        NeuralNetworkComponent->GetOutputValues(outputValues);
+
+        TArray<bool> result;
+        for (uint16 i = 0; i < outputValues.Num(); i++)
+        {
+            if (outputValues[i] > 0.5)
+                result.Add(true);
+            else
+                result.Add(false);
+        }
+        gameInstance->SetNeuronOutputValues(result);
+    }
 }
 
 void ANNCharacter::NeuralNetworkGetConnectionWeights(TArray<double> &w)

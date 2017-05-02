@@ -27,7 +27,7 @@ void AGeneticAlgorithmController::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void AGeneticAlgorithmController::SpawnEntity()
+void AGeneticAlgorithmController::SpawnEntity(bool CameraFocus)
 {
     FActorSpawnParameters SpawnParams;
     SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -69,8 +69,9 @@ void AGeneticAlgorithmController::SpawnEntity()
 
             mGenomeIndex++;
         }
-        entity->SetGeneticAlgorithmController(GenomeID, this);
-        OnCharacterDeath.Broadcast(entity);
+        entity->SetGeneticAlgorithmController(GenomeID, this, CameraFocus);
+        if(CameraFocus)
+            OnCharacterDeath.Broadcast(entity);
 
         //Increase member counter on GUI
         if (gameInstance)

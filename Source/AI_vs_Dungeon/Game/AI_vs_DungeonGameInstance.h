@@ -57,11 +57,16 @@ class AI_VS_DUNGEON_API UAI_vs_DungeonGameInstance : public UGameInstance
      void SetElitismRate(int32 rate) { mElitismSelection = rate; }
      int32 GetElitismRate() { return mElitismSelection; }
 
+     UFUNCTION(BlueprintCallable, category = "GameInstance")
+     TArray<bool> GetNeuronOutputValues() { return mNeuronValues; }
+     void SetNeuronOutputValues(const TArray<bool> &w) { mNeuronValues = w; }
+
   private:
       int32 mFitness;
       int32 mGenerations;
       int32 mPopulationMember;
       bool mShowDebugData;
+      TArray<bool> mNeuronValues;
 
       //Initial config values
       bool mInitialConfigValues = false;

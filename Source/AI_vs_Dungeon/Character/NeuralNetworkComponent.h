@@ -85,11 +85,13 @@ public:
     void FeedForward(const TArray<double> &inputValues);
     void BackPropagate(const TArray<double> &targetValues);
     void GetResults(TArray<double> &resultValues) const;
+    void GetOutputValues(TArray<double> &w) const;
 
     inline double GetRecentAverageError() const { return mRecentAverageError; }
 
     void SetConnectionWeights(const TArray<double> &w);
     void GetConnectionWeights(TArray<double> &w);
+    void GetConnectionWeightsNoBIAS(TArray<double> &w);
 
     //down, back, up, forward
     void SetInputValue(uint16 index, double value);

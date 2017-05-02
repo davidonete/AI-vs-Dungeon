@@ -139,6 +139,20 @@ void UNeuralNetworkComponent::GetResults(TArray<double> &resultValues) const
         resultValues.Add(mLayers.Last()[neuronIdx].GetOutputValue());
 }
 
+void UNeuralNetworkComponent::GetOutputValues(TArray<double>& w) const
+{
+    w.Empty();
+
+    //From the fist layer to the last hidden layer (except output layer)
+    for (int32 layerIdx = 0; layerIdx < mLayers.Num(); layerIdx++)
+    {
+        const Layer &layer = mLayers[layerIdx];
+        //From the first neuron of the layer to the last (except bias one)
+        for (int32 neuronIdx = 0; neuronIdx < layer.Num() - 1; neuronIdx++)
+            w.Add(layer[neuronIdx].GetOutputValue());
+    }
+}
+
 void UNeuralNetworkComponent::SetConnectionWeights(const TArray<double> &w)
 {
     unsigned connectionIdx = 0;
@@ -171,6 +185,24 @@ void UNeuralNetworkComponent::GetConnectionWeights(TArray<double> &w)
         Layer &layer = mLayers[layerIdx];
         //From the first neuron of the layer to the last
         for (int32 neuronIdx = 0; neuronIdx < layer.Num(); neuronIdx++)
+        {
+            TArray<Connection> weights = layer[neuronIdx].GetOutputWeights();
+            for (int32 weigthIdx = 0; weigthIdx < weights.Num(); weigthIdx++)
+                w.Add(weights[weigthIdx].Weight);
+        }
+    }
+}
+
+void UNeuralNetworkComponent::GetConnectionWeightsNoBIAS(TArray<double> &w)
+{
+    w.Empty();
+
+    //From the fist layer to the last hidden layer (except output layer)
+    for (int32 layerIdx = 0; layerIdx < mLayers.Num() - 1; layerIdx++)
+    {
+        Layer &layer = mLayers[layerIdx];
+        //From the first neuron of the layer to the last (except BIAS)
+        for (int32 neuronIdx = 0; neuronIdx < layer.Num() - 1; neuronIdx++)
         {
             TArray<Connection> weights = layer[neuronIdx].GetOutputWeights();
             for (int32 weigthIdx = 0; weigthIdx < weights.Num(); weigthIdx++)

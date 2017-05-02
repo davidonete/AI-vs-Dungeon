@@ -38,6 +38,8 @@ private:
     //Check if the agent is stuck on the same place for a amount of time
     void CheckCharacterFitness(float DeltaTime);
 
+    void UpdateGUI();
+
     float mLastDistanceLeft = 9999999.0f;
     float mLastDistanceUpdateTime = 0.0f;
 
@@ -51,6 +53,8 @@ private:
 
     int32 mGenomeID;
     AGeneticAlgorithmController* mGAController;
+
+    bool mHasCameraFocus;
 
 protected:
 	// APawn interface
@@ -91,5 +95,5 @@ public:
     void NeuralNetworkGetConnectionWeights(TArray<double> &w);
     void NeuralNetworkSetConnectionWeights(TArray<double> &w);
 
-    void SetGeneticAlgorithmController(int32 id, AGeneticAlgorithmController* GAController);
+    void SetGeneticAlgorithmController(int32 id, AGeneticAlgorithmController* GAController, bool CameraFocus);
 };

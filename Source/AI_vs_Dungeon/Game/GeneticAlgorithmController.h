@@ -31,7 +31,7 @@ public:
 
     //Called when the previous entity has finished and its fitness is updated
     UFUNCTION(BlueprintCallable, Category = "Controller")
-    void SpawnEntity();
+    void SpawnEntity(bool CameraFocus);
 
     void UpdateEntityFitness(int32 id, double fitness);
 
